@@ -1,5 +1,4 @@
 from app.models.schemas import ChatRequest, LatexResponse, ChatResponse
-from typing import 
 
 from groq import Groq
 
