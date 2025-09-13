@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
-# Requests
+# REQUEST MODELS
 
 class CompileRequest(BaseModel):
     """Model for compiling Latex into a pdf"""
@@ -9,7 +9,12 @@ class CompileRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     """Model for a natural language prompt request"""
-    input: str
-    options: Optional[dict]
+    prompt: str
 
-# (Responses removed: chat now returns FileResponse directly)
+# RESPONSE MODELS
+
+class ChatResponse(BaseModel):
+    """Simple chat result containing a response message and the produced LaTeX."""
+    message: str
+    latex: str
+    error: Optional[str] = None
