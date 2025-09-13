@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 from app.services.chat_service import ChatService
 from app.services.pdf_service import PDFService
-from app.models.schemas import InputRequest, ChatResponse, LatexResponse, CompileRequest
+from app.models.schemas import ChatRequest, ChatResponse, CompileRequest
 from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter()
@@ -11,8 +11,8 @@ async def compile_endpoint(file: UploadFile = File(...)):
     response = await PDFService.compile_pdf(file)
     return response
 
-@router.post("/transform", response_model=LatexResponse)
-async def transform_endpoint(request: InputRequest):
+@router.post("/chat", response_model=ChatResponse)
+async def transform_endpoint(request: ChatRequest):
     try:
         response = await ChatService.process_chat(request)
         return response
