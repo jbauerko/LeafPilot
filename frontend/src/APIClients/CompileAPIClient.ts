@@ -3,13 +3,14 @@ import { isSuccess } from "../utils/apiUtils";
 
 const base = await baseAPIClient();
 
-const compileTex = async (formData: FormData): Promise<any> => {
+const compileTex = async (formData: FormData): Promise<Uint8Array | null> => {
   try {
     const res = await base.post(
       `/compile`, formData, {
 	headers: {
 	  "Content-Type": "multipart/form-data"
-	}
+	},
+	responseType: "blob"
       }
     );
 
@@ -17,7 +18,11 @@ const compileTex = async (formData: FormData): Promise<any> => {
       throw new Error(`Response status ${res.status}`);
     }
 
-    return res.data;
+    const arrayBuffer = await res.data.arrayBuffer();
+
+    const pdfBytes = new Uint8Array(arrayBuffer);
+
+    return pdfBytes;
   } catch (error) {
     console.log("Error:", error);
     return null;
@@ -26,10 +31,3 @@ const compileTex = async (formData: FormData): Promise<any> => {
 export default {
   compileTex
 }
-
-
-
-// /api/compile
-
-//post
-//form data: 

@@ -1,7 +1,9 @@
+"use client";
+import { useState } from "react";
 import { Menubar, MenubarGroup, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem } from "@/components/ui/menubar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Leaf, ArrowRight } from "lucide-react";
+import { Leaf, ArrowRight, LoaderCircle } from "lucide-react";
 import CompileAPIClient from "@/APIClients/CompileAPIClient";
 import { useEditorStore } from "@/providers/editor-store-provider";
 import { strToTex } from "@/utils/helpers";
@@ -10,7 +12,9 @@ interface MenuProps {
 };
 
 export default function Menu ({}: MenuProps) {
-  const { content } = useEditorStore(
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { content, setPdf } = useEditorStore(
     (state) => state
   );
 
@@ -34,12 +38,18 @@ export default function Menu ({}: MenuProps) {
 	</MenubarContent>
       </MenubarMenu>
       <Button
-	onClick={()=>
+	disabled={isLoading}
+	onClick={async ()=>{
 	  //console.log("Testing")
-	  CompileAPIClient.compileTex(strToTex(content))
-	}>
+	  setIsLoading(true);
+	  const file = await CompileAPIClient.compileTex(strToTex(content));
+	  setPdf(file);
+	  setIsLoading(false);
+	}}>
 	  Compile
-	<ArrowRight />
+	{isLoading
+	  ? <LoaderCircle className="animate-spin" />
+	  : <ArrowRight />}
       </Button>
     </Menubar>
   );
