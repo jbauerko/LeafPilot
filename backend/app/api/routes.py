@@ -11,10 +11,10 @@ async def compile_endpoint(file: UploadFile = File(...)):
     response = await PDFService.compile_pdf(file)
     return response
 
-# @router.post("/chat", response_model=ChatResponse)
-# async def chat_endpoint(request: ChatRequest):
-#     response = await ChatService.process_chat(request)
-#     return ChatResponse(response=response)
+@router.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    response = await ChatService.process_chat(request)
+    return ChatResponse(response=response)
 
 @router.post("/test")
 async def test_endpoint(request: CompileRequest):
