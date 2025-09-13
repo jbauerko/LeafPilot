@@ -36,3 +36,12 @@ yarn-error.log*
 next-env.d.ts
 
 */venv/
+/backend/output/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+**/__pycache__/
