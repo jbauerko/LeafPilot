@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from app.services.chat_service import ChatService
 from app.services.pdf_service import PDFService
-from app.models.schemas import ChatRequest, ChatResponse, CompileRequest
-from fastapi.responses import FileResponse, JSONResponse
+from app.models.schemas import ChatRequest, CompileRequest
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -11,13 +11,10 @@ async def compile_endpoint(file: UploadFile = File(...)):
     response = await PDFService.compile_pdf(file)
     return response
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat")
 async def transform_endpoint(request: ChatRequest):
-    try:
-        response = await ChatService.process_chat(request)
-        return response
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    # Returns a FileResponse (.tex) produced by ChatService
+    return await ChatService.process_chat(request)
 
 @router.post("/test")
 async def test_endpoint(request: CompileRequest):

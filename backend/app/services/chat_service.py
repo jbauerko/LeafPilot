@@ -1,51 +1,67 @@
-from app.models.schemas import ChatRequest, LatexResponse, ChatResponse
-
+from app.models.schemas import ChatRequest
+from app.core.config import settings
+from fastapi.responses import FileResponse
 from groq import Groq
+import tempfile
+from pathlib import Path
+import json
+
 
 class ChatService:
-
     @staticmethod
-    async def process_chat(request: ChatRequest) -> ChatResponse:
-        input_text = request.input
-        options = request.options
-
+    async def process_chat(request: ChatRequest) -> FileResponse:
+        """Generate LaTeX from prompt and return it as a .tex file download."""
+        prompt = request.input
         try:
-            latex_response = await ChatService.generate_latex_from_prompt(input_text)
-            chat_response = f"Successfully processed your LaTeX request."
-            return ChatResponse(response=chat_response, latex=latex_response)
+            latex_text = await ChatService.generate_latex_from_prompt(prompt)
 
+            # Create a temporary .tex file and return it
+            temp_dir = tempfile.mkdtemp()
+            tex_path = Path(temp_dir) / "generated.tex"
+            tex_path.write_text(latex_text, encoding="utf-8")
+
+            return FileResponse(
+                path=str(tex_path),
+                media_type="application/x-tex",
+                filename="generated.tex"
+            )
         except Exception as e:
-            return ChatResponse(
-                response=f"Error: {str(e)}",
-                latex=LatexResponse(latex="", error=str(e))
+            # Create an error .tex file with the error message for transparency
+            temp_dir = tempfile.mkdtemp()
+            tex_path = Path(temp_dir) / "error.tex"
+            tex_path.write_text(f"% Error generating LaTeX\n% {str(e)}\n", encoding="utf-8")
+            return FileResponse(
+                path=str(tex_path),
+                media_type="application/x-tex",
+                filename="error.tex"
             )
 
     @staticmethod
-    async def generate_latex_from_prompt(prompt: str) -> LatexResponse:
-        """
-        Generate LaTeX code from a natural language prompt using Groq
-        """
-        client = Groq()
-
-        latex_output = client.chat.completions.create(
+    async def generate_latex_from_prompt(prompt: str) -> str:
+        """Use Groq to generate LaTeX content from a natural language prompt."""
+        client = Groq(api_key=settings.groq_api_key)
+        completion = client.chat.completions.create(
             messages=[
-                # Set an optional system message. This sets the behavior of the
-                # assistant and can be used to provide specific instructions for
-                # how it should behave throughout the conversation.
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant."
-                },
-                # Set a user message for the assistant to respond to.
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
+                {"role": "system", "content": "You are an AI that outputs ONLY LaTeX code. No explanations."},
+                {"role": "user", "content": prompt},
             ],
-
-            # The language model which will generate the completion.
             model="llama-3.3-70b-versatile"
         )
 
-        # Return a structured LatexResponse object
-        return LatexResponse(latex=latex_output, preamble=None, packages=None)
+        # Attempt to extract text safely
+        try:
+            content = completion.choices[0].message.content  # type: ignore[attr-defined]
+        except Exception:
+            # Fallback stringify
+            content = str(completion)
+
+        # Optional: strip surrounding code fences if model returns ```latex ... ```
+        if content.startswith("```"):
+            lines = content.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            content = "\n".join(lines)
+
+        return content.strip()
