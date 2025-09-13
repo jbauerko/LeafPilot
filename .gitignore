@@ -37,6 +37,12 @@ next-env.d.ts
 
 # python
 */venv/
-**/__pycache__/
+/backend/output/
 
-backend/output/
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+**/__pycache__/
