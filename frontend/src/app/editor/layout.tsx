@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { EditorStoreProvider } from "@/providers/editor-store-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,14 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-	<div className="h-screen flex justify-center items-center">
-	  {children}
-	</div>
-      </body>
-    </html>
+    <EditorStoreProvider>
+      <div className="h-screen flex overflow-hidden">
+	{children}
+      </div>
+    </EditorStoreProvider>
   );
 }
