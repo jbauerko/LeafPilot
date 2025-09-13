@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useEditorStore } from "@/providers/editor-store-provider";
 import { Message } from "@/types/types";
-import { Editor, useMonaco } from "@monaco-editor/react";
+import { Editor, DiffEditor, useMonaco } from "@monaco-editor/react";
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { RAW_LATEX_COMMANDS, toCompletionItem } from "@/constants/latexCommands";
@@ -35,7 +35,7 @@ export default function Edit ({}: EditProps) {
   const monaco = useMonaco();
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const { setTerm, compiledPdf } = useEditorStore(
+  const { content, setTerm, compiledPdf } = useEditorStore(
     (state) => state,
   );
 
