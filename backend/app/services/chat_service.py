@@ -32,7 +32,7 @@ class ChatService:
             "You are an assistant that produces a concise explanation plus LaTeX code. "
             "Return EXACTLY two sections using these markers on their own lines:\n"
             "<<<MESSAGE>>>\n"
-            "<a response to the user's request, including a short helpful natural language explanation of the changes made>\n"
+            "<a short helpful response to the user's request, including a natural language explanation of the changes made>\n"
             "<<<LATEX>>>\n"
             "<ONLY the LaTeX code, no commentary, no markdown fences>\n"
             "No extra text before the first marker or after the LaTeX block."
