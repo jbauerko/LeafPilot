@@ -65,7 +65,8 @@ class ChatService:
                 {"role": "system", "content": system_instructions},
                 {"role": "user", "content": prompt}
             ],
-            model="llama-3.3-70b-versatile"
+            # model="llama-3.3-70b-versatile"
+            model="openai/gpt-oss-120b"
         )
         try:
             raw = completion.choices[0].message.content  # type: ignore[attr-defined]
