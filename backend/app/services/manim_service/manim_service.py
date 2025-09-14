@@ -30,7 +30,7 @@ class ManimService:
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
     
-    def generate_animation_code(self, description: str) -> str:
+    def generate_animation_code(self, description: str, error_context: str = None, retry_count: int = 0) -> str:
         print("=" * 80)
         print("STARTING ANIMATION CODE GENERATION")
         print("=" * 80)
@@ -53,7 +53,8 @@ class ManimService:
         except Exception as e:
             return f"# Error initializing Groq client: {str(e)}"
         
-        system_instructions = (
+        # Build system instructions with error context if retrying
+        base_instructions = (
             "### ROLE\n"
             "You are a manim animation generation bot. You must produce a section of manim python code that animates the description provided for you.\n"
             "Your section of code will be inserted below:\n"
@@ -105,6 +106,24 @@ class ManimService:
             "   self.wait(0.1)\n"
             "self.wait(2)\n"
         )
+        
+        # Add error context if this is a retry
+        if error_context:
+            error_instructions = f"""
+### ERROR CONTEXT (RETRY #{retry_count})
+The previous attempt failed with this error:
+{error_context}
+
+Please fix the code based on this error. Common fixes:
+- Ensure all variables are defined before use (e.g., 'axes = Axes(...)' before using 'axes')
+- Check function names and parameters
+- Verify mathematical expressions are valid
+- Make sure all imports are available (numpy as np, etc.)
+- Avoid complex logic that might cause runtime errors
+"""
+            system_instructions = base_instructions + error_instructions
+        else:
+            system_instructions = base_instructions
 
         user_message = f"Please create a manim animation for this description: {description}"
         
@@ -169,7 +188,7 @@ class ManimService:
         }
         return quality_flags.get(quality, "--quality=m")
     
-    def generate_manim_file(self, input_data: ManimAnimationInput) -> str:
+    def generate_manim_file(self, input_data: ManimAnimationInput, error_context: str = None, retry_count: int = 0) -> str:
         # this needs to inject all of the json input into the manim_template.py, and create/overwrite the persistent runner file
         
         # Read the template file
@@ -185,7 +204,7 @@ config.background_color = {input_data.background_color}
 """
         
         # Generate animation code injection
-        animation_injection = self.generate_animation_code(input_data.description)
+        animation_injection = self.generate_animation_code(input_data.description, error_context, retry_count)
         
         # Generate output configuration injection
         output_config_injection = f"""
@@ -208,52 +227,81 @@ config.background_color = {input_data.background_color}
         return persistent_file_path
         
     def run_manim_animation(self, input_data: ManimAnimationInput) -> Dict[str, Any]:
-        # this should run the persistent runner file and save the video to the output directory set in the __init__
-        persistent_file_path = self.generate_manim_file(input_data)
+        # Retry up to 2 times with error context
+        max_retries = 2
+        last_error = None
         
-        try:
-            # Import the generated file and run the scene directly
-            import importlib.util
-            spec = importlib.util.spec_from_file_location("temp_manim", persistent_file_path)
-            temp_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(temp_module)
-            
-            # Get the MyAnimation class and run it
-            scene_class = getattr(temp_module, "MyAnimation")
-            scene = scene_class()
-            scene.render()
-            
-            # Look for the generated video file
-            video_filename = f"{input_data.output_file}.mp4"
-            for root, dirs, files in os.walk(self.output_dir):
-                if video_filename in files:
-                    video_path = os.path.join(root, video_filename)
-                    break
-            else:
-                video_path = None
-            
-            # Check if video file exists
-            if video_path and os.path.exists(video_path):
-                return {
-                    "success": True,
-                    "video_path": video_path,
-                    "video_url": f"/media/videos/manim/1080p60/{video_filename}",
-                    "stdout": "Direct execution successful",
-                    "stderr": ""
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": "Video file was not created",
-                    "stdout": "Direct execution completed but no video found",
-                    "stderr": ""
-                }
+        for retry_count in range(max_retries + 1):  # 0, 1, 2 (3 total attempts)
+            try:
+                print(f"Attempt {retry_count + 1}/{max_retries + 1}")
                 
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Exception during direct execution: {str(e)}"
-            }
+                # Generate the file with error context if retrying
+                persistent_file_path = self.generate_manim_file(
+                    input_data, 
+                    error_context=last_error, 
+                    retry_count=retry_count
+                )
+                
+                # Import the generated file and run the scene directly
+                import importlib.util
+                spec = importlib.util.spec_from_file_location("temp_manim", persistent_file_path)
+                temp_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(temp_module)
+                
+                # Get the MyAnimation class and run it
+                scene_class = getattr(temp_module, "MyAnimation")
+                scene = scene_class()
+                scene.render()
+                
+                # Look for the generated video file
+                video_filename = f"{input_data.output_file}.mp4"
+                for root, dirs, files in os.walk(self.output_dir):
+                    if video_filename in files:
+                        video_path = os.path.join(root, video_filename)
+                        break
+                else:
+                    video_path = None
+                
+                # Check if video file exists
+                if video_path and os.path.exists(video_path):
+                    return {
+                        "success": True,
+                        "video_path": video_path,
+                        "video_url": f"/media/videos/manim/1080p60/{video_filename}",
+                        "stdout": f"Direct execution successful (attempt {retry_count + 1})",
+                        "stderr": ""
+                    }
+                else:
+                    last_error = "Video file was not created after successful execution"
+                    if retry_count < max_retries:
+                        print(f"Retrying due to: {last_error}")
+                        continue
+                    else:
+                        return {
+                            "success": False,
+                            "error": last_error,
+                            "stdout": f"Direct execution completed but no video found (attempt {retry_count + 1})",
+                            "stderr": ""
+                        }
+                        
+            except Exception as e:
+                last_error = f"Exception during direct execution: {str(e)}"
+                print(f"Attempt {retry_count + 1} failed: {last_error}")
+                
+                if retry_count < max_retries:
+                    print(f"Retrying with error context...")
+                    continue
+                else:
+                    return {
+                        "success": False,
+                        "error": last_error
+                    }
+        
+        # This should never be reached, but just in case
+        return {
+            "success": False,
+            "error": "Maximum retries exceeded"
+        }
     
     @staticmethod
     async def compile_manim(input_data: ManimAnimationInput) -> ManimAnimationOutput:
@@ -289,7 +337,7 @@ def main():
         height=1080,
         width=1920,
         output_file="example_animation2",
-        description="Animate the integral of y=x^2",
+        description="Animate the function f(x)=x^2 from x=-3 to x=3, also animate the integral of the same funciton",
         frame_rate=30,
         background_color="WHITE",
         quality="medium_quality"

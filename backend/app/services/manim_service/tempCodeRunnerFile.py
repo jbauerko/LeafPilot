@@ -14,28 +14,16 @@ class MyAnimation(Scene):
     def construct(self):
         # Animation code will be injected by the parser
         axes = Axes(
-        x_range=[-1, 5, 1],
-        y_range=[-1, 20, 5],
+        x_range=[-3, 3, 1],
+        y_range=[0, 9, 1],
         axis_config={"color": BLUE},
         )
-        graph = axes.plot(lambda x: x**2, color=RED)
-        graph_label = axes.get_graph_label(graph, label="x^2")
-        a_tracker = ValueTracker(0)
-        vertical_line = always_redraw(lambda: axes.get_vertical_line(
-        axes.c2p(a_tracker.get_value(), 0)
-        )[0].set_color(YELLOW))
-        area = always_redraw(lambda: axes.get_area(
-        lambda x: x**2,
-        x_range=[0, a_tracker.get_value()],
-        color=GREEN,
-        opacity=0.5
-        ))
-        integral_tex = always_redraw(lambda: MathTex(
-        r"\int_{0}^{" + f"{a_tracker.get_value():.2f}" + r"} x^2\,dx = " + f"{(a_tracker.get_value()**3)/3:.2f}"
-        ).to_corner(UP+RIGHT))
-        self.play(Create(axes), Create(graph), Write(graph_label))
-        self.play(Create(area), Create(vertical_line), Write(integral_tex))
-        self.play(a_tracker.animate.set_value(4), run_time=5, rate_func=linear)
+        labels = axes.get_axis_labels(x_label="x", y_label="y")
+        graph = axes.plot(lambda x: x**2, x_range=[-3, 3], color=RED)
+        area = axes.get_area(graph, x_range=[-3, 3], color=BLUE, opacity=0.3)
+        self.play(Create(axes), Write(labels))
+        self.play(Create(graph))
+        self.play(FadeIn(area))
         self.wait(2)
         pass
 
