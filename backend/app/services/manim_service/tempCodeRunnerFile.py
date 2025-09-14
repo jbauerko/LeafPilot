@@ -14,24 +14,31 @@ class MyAnimation(Scene):
     def construct(self):
         # Animation code will be injected by the parser
         axes = Axes(
-        x_range=[-3, 3, 1],
-        y_range=[0, 9, 1],
-        axis_config={"color": BLUE},
+        x_range=[-2*PI, 2*PI, PI],
+        y_range=[-1.5, 1.5, 0.5],
+        axis_config={"color": WHITE},
+        x_axis_config={"numbers_to_include": [-2*PI, -PI, 0, PI, 2*PI]},
+        y_axis_config={"numbers_to_include": [-1, 0, 1]},
         )
         labels = axes.get_axis_labels(x_label="x", y_label="y")
-        graph = axes.plot(lambda x: x**2, x_range=[-3, 3], color=RED)
-        area = axes.get_area(graph, x_range=[-3, 3], color=BLUE, opacity=0.3)
         self.play(Create(axes), Write(labels))
-        self.play(Create(graph))
-        self.play(FadeIn(area))
+
+        sin_graph = axes.plot(lambda x: np.sin(x), color=BLUE)
+        sin_label = MathTex(r"\sin(x)").next_to(sin_graph, UP)
+        self.play(Create(sin_graph), Write(sin_label))
+
+        integral_graph = axes.plot(lambda x: -np.cos(x), color=RED)
+        integral_label = MathTex(r"-\cos(x)").next_to(integral_graph, UP)
+        self.play(Create(integral_graph), Write(integral_label))
+
         self.wait(2)
         pass
 
 # if __name__ == "__main__":
     # Output configuration will be injected by the parser
 
-    config.output_file = "example_animation2"
-    config.media_dir = r"c:\Users\jyall\Documents\GitHub\htn-2025\backend\app\media\manim"
+    config.output_file = "my_animation"
+    config.media_dir = r"C:\Users\jyall\Documents\GitHub\htn-2025\backend\app\media\manim"
 
 
 print("HELLO WORLD")

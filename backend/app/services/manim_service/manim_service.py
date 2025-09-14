@@ -79,7 +79,7 @@ class ManimService:
             "4. Use x and y axes to plot graphs\n"
             "5. Not everything needs to be animated, just the important parts.\n"
             "6. **IMPORTANT**: Try and avoid using if statements and for loops. Include tabs for indentation if you do use them. Tabs are 4 spaces.\n"
-            "7. Remember to use axes = Axes(...) to create the axes object.\n"
+            "7. Always use axes = Axes(...) to create the axes object.\n"
             "### EXAMPLE 1\n"
             "square = Square(side_length=2, color=BLUE, fill_opacity=0.5)\n"
             "self.play(Create(square))\n"

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
-from app.services.chat_service import ChatService, AudioService
+from app.services.chat_service import ChatService
+from app.services.audio_service import AudioService
 from app.services.pdf_service import PDFService
 from app.services.html_service import HTMLService
 from app.services.manim_service.manim_service import ManimService
