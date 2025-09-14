@@ -6,6 +6,7 @@ import { Leaf, ArrowRight, LoaderCircle } from "lucide-react";
 import CompileAPIClient from "@/APIClients/CompileAPIClient";
 import { useEditorStore } from "@/providers/editor-store-provider";
 import { strToTex } from "@/utils/helpers";
+import { toast } from "sonner";
 
 interface MenuProps {
 };
@@ -40,6 +41,11 @@ export default function Menu ({}: MenuProps) {
 	  //console.log("Testing")
 	  setIsCompiling(true);
 	  const file = await CompileAPIClient.compileTex(strToTex(content));
+	  if (!file) {
+	    toast.error("Failed to compile", {
+	      richColors: true,
+	    });
+	  }
 	  setPdf(file);
 	  setIsCompiling(false);
 	}}>

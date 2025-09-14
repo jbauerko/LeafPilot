@@ -149,6 +149,11 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 			      setContent(message.diff)
 			      setIsCompiling(true);
 			      const file = await CompileAPIClient.compileTex(strToTex(message.diff));
+			      if (!file) {
+				toast.error("Failed to compile", {
+				  richColors: true,
+				});
+			      }
 			      setPdf(file);
 			      setIsCompiling(false);
 			    }
@@ -180,6 +185,11 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 				    setContent(message.diff);
 				    setIsCompiling(true);
 				    const file = await CompileAPIClient.compileTex(strToTex(message.diff));
+				    if (!file) {
+				      toast.error("Failed to compile", {
+					richColors: true,
+				      });
+				    }
 				    setPdf(file);
 				    setIsLoading(false);
 				    setIsCompiling(false);
