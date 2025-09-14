@@ -1,6 +1,8 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
-from app.services.chat_service import ChatService, AudioService
+from app.services.chat_service import ChatService
+from app.services.audio_service import AudioService
+from app.agent.composer import AgentComposer
 from app.services.pdf_service import PDFService
 from app.services.html_service import HTMLService
 from app.services.manim_service.manim_service import ManimService
@@ -51,6 +53,12 @@ async def chat_endpoint(prompt: str = Form(...), files: list[UploadFile] | None 
         prompt += "\n\n% ==== BEGIN CONTEXT FILES ====\n" + "\n\n".join(context_segments) + "\n% ==== END CONTEXT FILES ===="
 
     return await ChatService.process_chat(ChatRequest(prompt=prompt))
+
+
+@router.post("/compose")
+async def compose_endpoint(prompt: str = Form(...)):
+    composer = AgentComposer()
+    return await composer.compose_document(prompt)
 
 
 @router.post("/test")

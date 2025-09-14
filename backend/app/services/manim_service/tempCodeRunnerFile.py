@@ -6,25 +6,25 @@ from manim import config
 
 config.pixel_height = 1080
 config.pixel_width = 1920
-config.frame_rate = 60
+config.frame_rate = 30
 config.background_color = WHITE
 
 
 class MyAnimation(Scene):
     def construct(self):
         # Animation code will be injected by the parser
-        square = Square(side_length=2, color=RED, fill_opacity=0.5)
-        self.play(Create(square))
-        self.play(Rotate(square, angle=PI/2))
-        self.play(MoveAlongPath(square, Circle(radius=2, color=WHITE)), rate_func=linear, run_time=3)
-        self.play(FadeOut(square))
+        vector = Arrow(start=ORIGIN, end=2*RIGHT + UP, color=BLUE, buff=0)
+        self.play(Create(vector))
+        transformed_vector = Arrow(start=ORIGIN, end=4*RIGHT + 2*UP, color=RED, buff=0)
+        self.play(Transform(vector, transformed_vector))
+        self.play(FadeOut(vector))
         pass
 
 if __name__ == "__main__":
     # Output configuration will be injected by the parser
     
-    config.output_file = "example_animation"
-    config.media_dir = r"c:\Users\jyall\Documents\GitHub\htn-2025\backend\app\media\manim"
+    config.output_file = "anim_2_ccdeac"
+    config.media_dir = r"/home/jbauerko/hackathons/htn-2025/backend/app/media/manim"
 
     
     config.save_as_gif = False
