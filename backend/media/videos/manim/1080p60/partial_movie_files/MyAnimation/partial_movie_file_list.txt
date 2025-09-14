@@ -1,5 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:C:/Users/jyall/Documents/GitHub/htn-2025/backend/media/videos/manim/1080p60/partial_movie_files/MyAnimation/2743010386_3293984763_223132457.mp4'
-file 'file:C:/Users/jyall/Documents/GitHub/htn-2025/backend/media/videos/manim/1080p60/partial_movie_files/MyAnimation/3790338095_2974836376_735197471.mp4'
-file 'file:C:/Users/jyall/Documents/GitHub/htn-2025/backend/media/videos/manim/1080p60/partial_movie_files/MyAnimation/3790338095_1980253147_735197471.mp4'
-file 'file:C:/Users/jyall/Documents/GitHub/htn-2025/backend/media/videos/manim/1080p60/partial_movie_files/MyAnimation/3790338095_347388378_735197471.mp4'

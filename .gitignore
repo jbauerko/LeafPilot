@@ -48,3 +48,5 @@ __pycache__/
 **/__pycache__/
 
 /backend/tests/
+/backend/media/manim/
+/backend/app/media/manim/

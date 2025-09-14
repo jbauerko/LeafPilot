@@ -1,8 +1,10 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
+from fastapi.responses import JSONResponse
 from app.services.chat_service import ChatService
 from app.services.pdf_service import PDFService
 from app.services.html_service import HTMLService
-from app.models.schemas import ChatRequest, CompileRequest
+from app.services.manim_service.manim_service import ManimService
+from app.models.schemas import ChatRequest, CompileRequest, ManimAnimationOutput, ManimAnimationInput
 
 router = APIRouter()
 
@@ -87,7 +89,7 @@ async def test_html_endpoint():
             content={"error": str(e)}
         )
 
-@router.post("manim")
-async def manim_endpoint(file: UploadFile = File(...)):
-    response = await ManimService.compile_manim(file)
+@router.post("/manim")
+async def manim_endpoint(input: ManimAnimationInput):
+    response = await ManimService.compile_manim(input)
     return response
