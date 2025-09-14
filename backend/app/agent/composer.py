@@ -1,11 +1,15 @@
 import json
 import uuid
+import logging
 from typing import List, Dict
 from groq import Groq
 
 from app.core.config import settings
 from app.models.schemas import ChatResponse
 from .registry import ToolRegistry
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class AgentComposer:
@@ -23,9 +27,16 @@ class AgentComposer:
         self.client = Groq(api_key=settings.groq_api_key)
 
     async def compose_document(self, prompt: str) -> ChatResponse:
+        logger.info(f"Starting document composition for prompt: {prompt[:100]}...")
+        
         animations = await self._extract_animation_specs(prompt)
+        logger.info(f"Extracted {len(animations)} animation(s) from prompt")
+        
         manim_tool = self.registry.get("generate_manim_animation")
+        screenshot_tool = self.registry.get("generate_video_screenshot")
         latex_tool = self.registry.get("generate_latex")
+        
+        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}")
 
         generated_anim_results: List[Dict] = []
         if animations:
@@ -49,12 +60,51 @@ class AgentComposer:
                 video_path = r.get("video_path")
                 desc = r.get("description")
                 context_lines.append(f"% Animation {i}: {desc}")
-                if video_path:
-                    # Use run: reference; actual embedding left to LaTeX engine/user packages
+                if video_path and screenshot_tool:
+                    # Generate screenshot from video
+                    logger.info(f"Generating screenshot for video {i}: {video_path}")
+                    screenshot_result = await screenshot_tool.run({"video_path": video_path})
+                    
+                    if screenshot_result.get("success"):
+                        screenshot_path = screenshot_result.get("screenshot_path")
+                        video_url = screenshot_result.get("video_url")
+                        logger.info(f"Screenshot generated successfully for animation {i}: {screenshot_path}")
+                        logger.info(f"Video URL: {video_url}")
+                        logger.info(f"COMPOSER: Using screenshot path in LaTeX: {screenshot_path}")
+                        
+                        context_lines.append(f"% Screenshot: {screenshot_path}")
+                        context_lines.append(f"% Video URL: {video_url}")
+                        # Embed screenshot with link to video
+                        context_lines.append(f"\\begin{{figure}}[h]")
+                        context_lines.append(f"\\centering")
+                        context_lines.append(f"\\href{{{video_url}}}{{\\includegraphics[width=0.8\\textwidth]{{{screenshot_path}}}}}")
+                        context_lines.append(f"\\caption{{Animation {i}: {desc}}}")
+                        context_lines.append(f"\\end{{figure}}")
+                        context_lines.append("")  # Empty line for spacing
+                    else:
+                        # Fallback to simple video link if screenshot fails
+                        error_msg = screenshot_result.get('error', 'Unknown error')
+                        logger.warning(f"Screenshot generation failed for animation {i}: {error_msg}")
+                        context_lines.append(f"% Screenshot generation failed: {error_msg}")
+                        # Generate localhost URL for fallback
+                        import os
+                        video_filename = os.path.basename(video_path)
+                        if "1080p60" in video_path:
+                            fallback_url = f"http://localhost:8000/videos60/{video_filename}"
+                        else:
+                            fallback_url = f"http://localhost:8000/videos/{video_filename}"
+                        context_lines.append(f"\\noindent Animation {i}: \\href{{{fallback_url}}}{{Open Video}}\\par")
+                elif video_path:
+                    # Fallback if screenshot tool not available
                     context_lines.append(f"% Local file: {video_path}")
-                    context_lines.append(
-                        f"\\noindent Animation {i}: \\href{{run:{video_path}}}{{Open Video}}\\par"  # requires hyperref
-                    )
+                    # Generate localhost URL for fallback
+                    import os
+                    video_filename = os.path.basename(video_path)
+                    if "1080p60" in video_path:
+                        fallback_url = f"http://localhost:8000/videos60/{video_filename}"
+                    else:
+                        fallback_url = f"http://localhost:8000/videos/{video_filename}"
+                    context_lines.append(f"\\noindent Animation {i}: \\href{{{fallback_url}}}{{Open Video}}\\par")
             context_lines.append("% ==== END GENERATED ANIMATIONS ====")
 
         augmented_prompt = prompt
@@ -88,6 +138,8 @@ class AgentComposer:
         """
         system = (
             "You extract manim animation intents from a user request aimed at creating a LaTeX document with optional animations. "
+            "IMPORTANT: Generate at most 1 animation per request to avoid duplication. "
+            "If multiple animation concepts are mentioned, choose the most important or comprehensive one. "
             "Return ONLY JSON with key 'animations' mapping to a list of objects each having a 'description' string. "
             "If no animations are implied, return {\"animations\": []}. No extra text."
         )

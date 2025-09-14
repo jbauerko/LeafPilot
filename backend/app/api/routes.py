@@ -52,6 +52,7 @@ async def chat_endpoint(prompt: str = Form(...), source: UploadFile | None = Non
     if context_segments:
         prompt += "\n\n% ==== BEGIN CONTEXT FILES ====\n" + "\n\n".join(context_segments) + "\n% ==== END CONTEXT FILES ===="
 
+    # return await ChatService.process_chat(ChatRequest(prompt=prompt))
     composer = AgentComposer()
     return await composer.compose_document(prompt)
 

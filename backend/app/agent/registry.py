@@ -1,12 +1,13 @@
 from .latex_tool import LatexTool
 from .manim_tool import ManimTool
+from .screenshot_tool import ScreenshotTool
 
 
 class ToolRegistry:
     """Registry holding available agent tools."""
 
     def __init__(self):
-        tools = [LatexTool(), ManimTool()]
+        tools = [LatexTool(), ManimTool(), ScreenshotTool()]
         self._tools = {t.name: t for t in tools}
 
     def list(self):
