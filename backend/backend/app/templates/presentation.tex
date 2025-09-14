@@ -1,0 +1,77 @@
+
+\documentclass[aspectratio=43]{beamer}
+\usetheme{Madrid}
+%\usefonttheme[onlymath]{serif}
+
+\usepackage{slashed}
+\usepackage{datetime}
+%\usepackage{slidesphysics}
+\graphicspath{{plots/}}
+\usepackage{hyperref}
+\usepackage{cancel}
+% \hypersetup{colorlinks=true, 
+%     linkcolor=blue,          % color of internal links (change box color with linkbordercolor)
+%     citecolor=black,        % color of links to bibliography
+%     filecolor=black,      % color of file links
+%     urlcolor=blue    }
+% \usepackage{deflamb}
+% \usepackage{color, colortbl}
+% \usepackage{tikz}
+%\usepackage{userdef}
+\usepackage[absolute,overlay]{textpos}
+\def\Put(#1,#2)#3{\leavevmode\makebox(0,0){\put(#1,#2){#3}}}
+
+\def\mydate{\leavevmode\hbox{\the\year-\twodigits\month-\twodigits\day}}
+\def\twodigits#1{\ifnum#1<10 0\fi\the#1}
+
+\newcommand\Wider[2][3em]{%
+\makebox[\linewidth][c]{%
+  \begin{minipage}{\dimexpr\textwidth+#1\relax}
+  \raggedright
+  \centering#2
+  \end{minipage}%
+  }%
+}
+
+\def\meetingname{Your Meeting Name}
+
+\title[\meetingname]{Your Presentation Title}
+\author[Your Name]{Your Full Name}
+% \institute[Your Institution]{}
+\institute[Your Institution]{Your Institution Name}
+\date[\mydate]{\meetingname\\\today}
+
+\begin{document}
+\begin{frame}[plain,t]
+\titlepage
+\end{frame}
+
+%The next statement creates the title page.
+\begin{frame}
+\frametitle{Contents}
+\tableofcontents
+\end{frame}
+%------------------------------------------------------------
+\section{Introduction}
+    \begin{frame}{Introduction}
+    \end{frame}
+
+
+\section{Conclusion}
+
+    \begin{frame}{Conclusion}
+    
+    \begin{itemize}
+        \item Key point 1
+        \item Key point 2
+    \end{itemize}
+    \end{frame}
+%}
+%\setbeamercolor{background canvas}{bg=violet}
+\setbeamercolor{background canvas}{bg=lightgray}
+\begin{frame}[plain,t]
+\vspace{100pt}
+\centering
+Thank you for your attention!
+\end{frame}
+\end{document}
