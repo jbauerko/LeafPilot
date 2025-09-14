@@ -55,6 +55,10 @@ async def chat_endpoint(prompt: str = Form(...), source: UploadFile | None = Non
     composer = AgentComposer()
     return await composer.compose_document(prompt)
 
+@router.post("/compose")
+async def compose_endpoint(prompt: str = Form(...)):
+    composer = AgentComposer()
+    return await composer.compose_document(prompt)
 
 @router.post("/test")
 async def test_endpoint(request: CompileRequest):
