@@ -36,8 +36,9 @@ class AgentComposer:
         screenshot_tool = self.registry.get("generate_video_screenshot")
         latex_tool = self.registry.get("generate_latex")
         template_tool = self.registry.get("get_latex_template")
+        web_scraper_tool = self.registry.get("scrape_web_page")
         
-        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}, Template: {template_tool is not None}")
+        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}, Template: {template_tool is not None}, WebScraper: {web_scraper_tool is not None}")
 
         generated_anim_results: List[Dict] = []
         if animations:
@@ -108,11 +109,24 @@ class AgentComposer:
                     context_lines.append(f"\\noindent Animation {i}: \\href{{{fallback_url}}}{{Open Video}}\\par")
             context_lines.append("% ==== END GENERATED ANIMATIONS ====")
 
+        # Check for URLs in the prompt and scrape them
+        web_content = await self._scrape_urls_from_prompt(prompt, web_scraper_tool)
+        if web_content:
+            context_lines.extend(web_content)
+
         augmented_prompt = prompt
         if context_lines:
-            augmented_prompt += ("\n\n" + "\n".join(context_lines) +
-                                 "\n\nPlease integrate the animations into an 'Animations' section. "
-                                 "If a full document is not present, create one. Include a section heading 'Animations'.")
+            augmented_prompt += ("\n\n" + "\n".join(context_lines))
+            
+            # Add instructions based on what content was generated
+            instructions = []
+            if any("GENERATED ANIMATIONS" in line for line in context_lines):
+                instructions.append("Please integrate the animations into an 'Animations' section.")
+            if any("WEB CONTENT" in line for line in context_lines):
+                instructions.append("Please integrate the web content into appropriate sections.")
+            if instructions:
+                augmented_prompt += ("\n\n" + " ".join(instructions) + 
+                                   " If a full document is not present, create one.")
 
         # Try to get a relevant template if available
         if template_tool:
@@ -212,3 +226,45 @@ class AgentComposer:
                 return template_name
         
         return None
+
+    async def _scrape_urls_from_prompt(self, prompt: str, web_scraper_tool) -> List[str]:
+        """Detect URLs in the prompt and scrape them for content."""
+        if not web_scraper_tool:
+            return []
+        
+        # Simple URL detection regex
+        import re
+        url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+        urls = re.findall(url_pattern, prompt)
+        
+        if not urls:
+            return []
+        
+        web_content_lines = []
+        web_content_lines.append("% ==== WEB CONTENT (Scraped) ====")
+        
+        for i, url in enumerate(urls, start=1):
+            logger.info(f"WEB_SCRAPER: Detected URL {i}: {url}")
+            try:
+                scrape_result = await web_scraper_tool.run({"url": url})
+                if scrape_result.get("success"):
+                    summary = scrape_result.get("summary", "")
+                    web_content_lines.append(f"% URL {i}: {url}")
+                    web_content_lines.append(f"% Summary: {summary[:200]}{'...' if len(summary) > 200 else ''}")
+                    web_content_lines.append(f"\\section{{Web Content {i}}}")
+                    web_content_lines.append(f"\\label{{url{i}}}")
+                    web_content_lines.append(f"Source: \\href{{{url}}}{{{url}}}")
+                    web_content_lines.append("")
+                    web_content_lines.append(f"{summary}")
+                    web_content_lines.append("")
+                    logger.info(f"WEB_SCRAPER: Successfully scraped URL {i} ({len(summary)} characters)")
+                else:
+                    error_msg = scrape_result.get('error', 'Unknown error')
+                    logger.warning(f"WEB_SCRAPER: Failed to scrape URL {i}: {error_msg}")
+                    web_content_lines.append(f"% URL {i}: {url} (scraping failed: {error_msg})")
+            except Exception as e:
+                logger.error(f"WEB_SCRAPER: Exception scraping URL {i} ({url}): {e}")
+                web_content_lines.append(f"% URL {i}: {url} (exception: {str(e)})")
+        
+        web_content_lines.append("% ==== END WEB CONTENT ====")
+        return web_content_lines
