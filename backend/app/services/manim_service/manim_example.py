@@ -5,17 +5,34 @@ import os
 class MyAnimation(Scene):
     def construct(self):
         # Create a square
-        square = Square(side_length=2, color=RED, fill_opacity=0.5)
-        self.play(Create(square))
-        self.play(Rotate(square, angle=PI/2))
-        circle = Circle(radius=2)
-        self.play(MoveAlongPath(square, circle), rate_func=linear, run_time=2)
-        self.play(FadeOut(square))
-        # square = Square(side_length=2, color=BLUE, fill_opacity=0.5)
-        # self.play(Create(square))
-        # self.play(Rotate(square, angle=PI/2))
-        # self.play(square.animate.shift(RIGHT*3))
-        # self.play(FadeOut(square))
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[-2, 9, 1],
+            axis_config={"color": BLUE},
+        )
+
+        # Add labels
+        labels = axes.get_axis_labels(x_label="x", y_label="y")
+
+        # Show axes
+        self.play(Create(axes), Write(labels))
+
+        # List of functions to plot
+        functions = [
+            lambda x: x**2,
+            lambda x: x**3 / 3,
+            lambda x: np.sin(x) * 2,
+        ]
+
+        colors = [RED, GREEN, YELLOW]
+
+        # Plot functions in a loop
+        for func, color in zip(functions, colors):
+            graph = axes.plot(func, color=color)
+            self.play(Create(graph), run_time=2)
+            self.wait(0.5)
+
+        self.wait(2)
 
 if __name__ == "__main__":
     # Configure manim to save output to the specified directory

@@ -11,20 +11,21 @@ class MyAnimation(Scene):
 #{ANIMATION_INJECTION}
         pass
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # Output configuration will be injected by the parser
-    #{OUTPUT_CONFIG_INJECTION}
-    
-    config.save_as_gif = False
-    config.save_last_frame = False
-    config.write_to_movie = True
-    config.format = "mp4"
-    config.save_pngs = False
-    config.save_sections = False
-    config.disable_caching = True
-    config.flush_cache = True
-    # This file is now run directly by Manim via subprocess from the service
-    # No need for additional subprocess calls here
-    scene = MyAnimation()
-    scene.render()
+#{OUTPUT_CONFIG_INJECTION}
+
+print("HELLO WORLD")
+config.save_as_gif = False
+config.save_last_frame = False
+config.write_to_movie = True
+config.format = "mp4"
+config.save_pngs = False
+config.save_sections = False
+config.disable_caching = True
+config.flush_cache = True
+# This file is now run directly by Manim via subprocess from the service
+# No need for additional subprocess calls here
+scene = MyAnimation()
+scene.render()
 

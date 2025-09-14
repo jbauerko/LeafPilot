@@ -72,3 +72,4 @@ class ManimAnimationOutput(BaseModel):
     success: bool = Field(description="Whether the animation was generated successfully")
     video_path: Optional[str] = Field(None, description="Path to the generated video file")
     video_url: Optional[str] = Field(None, description="URL to access the generated video")
+    error: Optional[str] = Field(None, description="Error message if the animation was not generated successfully")

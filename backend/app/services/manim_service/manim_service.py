@@ -39,7 +39,6 @@ class ManimService:
         api_key = os.getenv('GROQ_API_KEY')
         
         print(f"API Key available: {bool(api_key)}")
-        print(f"API Key value: {api_key}")
         print(f"Current working directory: {os.getcwd()}")
         
         # Check if API key is available
@@ -52,18 +51,11 @@ class ManimService:
             client = Groq(api_key=api_key)
             print("Groq client initialized successfully")
         except Exception as e:
-            print(f"ERROR initializing Groq client: {str(e)}")
             return f"# Error initializing Groq client: {str(e)}"
         
         system_instructions = (
             "### ROLE\n"
             "You are a manim animation generation bot. You must produce a section of manim python code that animates the description provided for you.\n"
-            "An example of the animation code is:\n"
-            "square = Square(side_length=2, color=BLUE, fill_opacity=0.5)\n"
-            "self.play(Create(square))\n"
-            "self.play(Rotate(square, angle=PI/2))\n"
-            "self.play(square.animate.shift(RIGHT*3))\n"
-            "self.play(FadeOut(square))\n"
             "Your section of code will be inserted below:\n"
             "class MyAnimation(Scene):\n"
             "    def construct(self):\n"
@@ -83,8 +75,38 @@ class ManimService:
             "1. Use the manim library to generate the code.\n"
             "2. Keep code simple and clean.\n"
             "3. Start each line at the beginning (no leading spaces).\n"
+            "4. Use x and y axes to plot graphs\n"
+            "5. Not everything needs to be animated, just the important parts.\n"
+            "6. **IMPORTANT**: Try and avoid using if statements and for loops. Include tabs for indentation if you do use them. Tabs are 4 spaces.\n"
+            "7. Remember to use axes = Axes(...) to create the axes object.\n"
+            "### EXAMPLE 1\n"
+            "square = Square(side_length=2, color=BLUE, fill_opacity=0.5)\n"
+            "self.play(Create(square))\n"
+            "self.play(Rotate(square, angle=PI/2))\n"
+            "self.play(square.animate.shift(RIGHT*3))\n"
+            "self.play(FadeOut(square))\n"
+            "### EXAMPLE 2\n"
+            "axes = Axes(\n"
+            "    x_range=[-3, 3, 1],\n"
+            "    y_range=[-2, 9, 1],\n"
+            "    axis_config={'color': BLUE},\n"
+            ")\n"
+            "labels = axes.get_axis_labels(x_label='x', y_label='y')\n"
+            "self.play(Create(axes), Write(labels))\n"
+            "functions = [\n"
+            "    lambda x: x**2,\n"
+            "    lambda x: x**3 / 3,\n"
+            "    lambda x: np.sin(x) * 2,\n"
+            "]\n"
+            "colors = [RED, GREEN, YELLOW]\n"
+            "for func, color in zip(functions, colors):\n"
+            "   graph = axes.plot(func, color=color)\n"
+            "   self.play(Create(graph), run_time=2)\n"
+            "   self.wait(0.1)\n"
+            "self.wait(2)\n"
         )
-        user_message = f"Please create a manim animation for this descriptoin: {description}"
+
+        user_message = f"Please create a manim animation for this description: {description}"
         
         print("Making API call to Groq...")
         print(f"User message: {user_message}")
@@ -95,10 +117,10 @@ class ManimService:
                     {"role": "system",
                      "content": system_instructions},
                     {"role": "user",
-                       "content": user_message}
+                     "content": user_message}
                 ],
-                model="groq/compound"
-                # model="llama-3.3-70b-versatile"
+                # model="groq/compound"
+                model="openai/gpt-oss-120b"
             )
             print("API call successful!")
         except Exception as e:
@@ -190,64 +212,47 @@ config.background_color = {input_data.background_color}
         persistent_file_path = self.generate_manim_file(input_data)
         
         try:
-            # Get quality flags
-            quality_flags = self.get_quality_flags(input_data.quality)
+            # Import the generated file and run the scene directly
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("temp_manim", persistent_file_path)
+            temp_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(temp_module)
             
-            # Run manim command
-            cmd = [
-                sys.executable, "-m", "manim",
-                persistent_file_path,
-                input_data.output_file,
-                quality_flags,
-                "--format=mp4",
-                "--media_dir", self.output_dir
-            ]
+            # Get the MyAnimation class and run it
+            scene_class = getattr(temp_module, "MyAnimation")
+            scene = scene_class()
+            scene.render()
             
-            # Execute the command
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.path.dirname(persistent_file_path))
+            # Look for the generated video file
+            video_filename = f"{input_data.output_file}.mp4"
+            for root, dirs, files in os.walk(self.output_dir):
+                if video_filename in files:
+                    video_path = os.path.join(root, video_filename)
+                    break
+            else:
+                video_path = None
             
-            # No cleanup needed since we're using persistent files
-            
-            if result.returncode == 0:
-                # Video should be saved in the output directory
-                # Manim creates videos with the scene class name, not the output_file name
-                video_filename = "MyAnimation.mp4"
-                # Look for video in any subdirectory (manim creates temp dirs)
-                for root, dirs, files in os.walk(self.output_dir):
-                    if video_filename in files:
-                        video_path = os.path.join(root, video_filename)
-                        break
-                else:
-                    video_path = None
-                
-                # Check if video file exists
-                if video_path and os.path.exists(video_path):
-                    return {
-                        "success": True,
-                        "video_path": video_path,
-                        "video_url": f"/media/videos/manim/1080p60/{video_filename}",
-                        "stdout": result.stdout,
-                        "stderr": result.stderr
-                    }
-                else:
-                    return {
-                        "success": False,
-                        "error": "Video file was not created",
-                        "stdout": result.stdout,
-                        "stderr": result.stderr
-                    }
+            # Check if video file exists
+            if video_path and os.path.exists(video_path):
+                return {
+                    "success": True,
+                    "video_path": video_path,
+                    "video_url": f"/media/videos/manim/1080p60/{video_filename}",
+                    "stdout": "Direct execution successful",
+                    "stderr": ""
+                }
             else:
                 return {
                     "success": False,
-                    "error": f"Manim execution failed: {result.stderr}",
-                    "stdout": result.stdout,
-                    "stderr": result.stderr
+                    "error": "Video file was not created",
+                    "stdout": "Direct execution completed but no video found",
+                    "stderr": ""
                 }
                 
         except Exception as e:
             return {
                 "success": False,
-                "error": f"Exception during manim execution: {str(e)}"
+                "error": f"Exception during direct execution: {str(e)}"
             }
     
     @staticmethod
@@ -271,7 +276,8 @@ config.background_color = {input_data.background_color}
             return ManimAnimationOutput(
                 success=False,
                 video_path=None,
-                video_url=None
+                video_url=None,
+                error=str(e)
             )
 
 def main():
@@ -282,9 +288,9 @@ def main():
     example_input = ManimAnimationInput(
         height=1080,
         width=1920,
-        output_file="example_animation",
-        description="Create a red square that appears, rotates 90 degrees, moves in a circle, and fades out",
-        frame_rate=60,
+        output_file="example_animation2",
+        description="Animate the integral of y=x^2",
+        frame_rate=30,
         background_color="WHITE",
         quality="medium_quality"
     )
