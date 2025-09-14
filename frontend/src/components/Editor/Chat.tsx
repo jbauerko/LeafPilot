@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, LoaderCircle, ChevronDown, Square } from "lucide-react";
+import { ArrowUp, LoaderCircle, ChevronDown, Square, Eye, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ChatAPIClient from "@/APIClients/ChatAPIClient";
 import { strToTex } from "@/utils/helpers";
@@ -34,7 +34,7 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 
   const models = [
     {
-      model: "ChatGPT"
+      model: "Llama"
     }
   ];
 
@@ -72,8 +72,8 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 		  <AvatarFallback>C</AvatarFallback>
 		</Avatar>
 		<div className="flex flex-col gap-0.5">
-		  <div className="text-sm">ChatGPT</div>
-		  <div className="text-muted-foreground text-xs">chatgpt@gmail.com</div>
+		  <div className="text-sm">Llama Versatile</div>
+		  <div className="text-muted-foreground text-xs">llama-3.3-70b-versatile</div>
 		</div>
 	      </div>
 	      <ChevronDown className="size-6" />
@@ -111,11 +111,20 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 		    {message.content}
 		    {message.role=="bot" && message.diff && (
 		      <Dialog>
-			<DialogTrigger asChild>
-			  <Button variant="secondary" className="w-min">
-			    See Diffview
+			<div className="flex flex-row gap-2">
+			  <DialogTrigger asChild>
+			    <Button variant="secondary" className="w-min">
+			      <Eye />
+			    </Button>
+			  </DialogTrigger>
+			  <Button variant="secondary" className="w-min" onClick={()=>{
+			    if (message.diff) {
+			      setContent(message.diff)
+			    }
+			  }}>
+			    <Check />
 			  </Button>
-			</DialogTrigger>
+			</div>
 			<DialogContent className="w-[80vw] max-w-none">
 			  <DialogHeader>
 			    <DialogTitle>Diff View</DialogTitle>

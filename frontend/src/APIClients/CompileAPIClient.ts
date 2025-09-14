@@ -3,8 +3,12 @@ import { isSuccess } from "../utils/apiUtils";
 
 const base = await baseAPIClient();
 
-const compileTex = async (formData: FormData): Promise<Uint8Array | null> => {
+const compileTex = async (file: File): Promise<Uint8Array | null> => {
   try {
+    const formData = new FormData();
+
+    formData.append("file", file);
+
     const res = await base.post(
       `/compile`, formData, {
 	headers: {
