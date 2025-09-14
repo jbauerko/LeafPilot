@@ -10,7 +10,7 @@ The AI LaTeX Editor. Become an extraordinary researcher. student. professor.
 First, clone the repo
 ```bash
 git clone https://github.com/jbauerko/htn-2025.git
-cd doro
+cd htn-2025
 ```
 ### Frontend
 ```bash
