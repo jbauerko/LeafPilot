@@ -35,8 +35,9 @@ class AgentComposer:
         manim_tool = self.registry.get("generate_manim_animation")
         screenshot_tool = self.registry.get("generate_video_screenshot")
         latex_tool = self.registry.get("generate_latex")
+        template_tool = self.registry.get("get_latex_template")
         
-        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}")
+        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}, Template: {template_tool is not None}")
 
         generated_anim_results: List[Dict] = []
         if animations:
@@ -113,6 +114,19 @@ class AgentComposer:
                                  "\n\nPlease integrate the animations into an 'Animations' section. "
                                  "If a full document is not present, create one. Include a section heading 'Animations'.")
 
+        # Try to get a relevant template if available
+        if template_tool:
+            template_type = self._detect_template_type(prompt)
+            if template_type:
+                logger.info(f"Detected template type: {template_type}, retrieving template...")
+                template_result = await template_tool.run({"type": template_type})
+                if template_result.get("success"):
+                    template_content = template_result.get("template_content", "")
+                    augmented_prompt += f"\n\n% ==== TEMPLATE EXAMPLE: {template_type.upper()} ====\n% Use this as reference for structure and formatting:\n{template_content}"
+                    logger.info(f"Retrieved template '{template_type}' ({len(template_content)} characters)")
+                else:
+                    logger.warning(f"Failed to retrieve template '{template_type}': {template_result.get('error')}")
+
         # Generate final LaTeX
         if latex_tool:
             latex_result = await latex_tool.run({"prompt": augmented_prompt})  # type: ignore[attr-defined]
@@ -173,3 +187,28 @@ class AgentComposer:
             if desc and isinstance(desc, str) and 5 <= len(desc) <= 500:
                 cleaned.append({"description": desc.strip()})
         return cleaned
+
+    def _detect_template_type(self, prompt: str) -> str | None:
+        """Detect if the prompt suggests a specific document type that has a template."""
+        prompt_lower = prompt.lower()
+        
+        # Skip template detection if "generic" keyword is present
+        if "generic" in prompt_lower:
+            return None
+        
+        # Template detection keywords
+        template_keywords = {
+            "swe_resume": ["resume", "cv", "curriculum vitae", "job application", "employment", "software", "swe"],
+            "two_row_resume": ["two row resume", "two-column resume", "side by side resume"],
+            "textbook": ["textbook", "book", "course", "lesson", "educational", "learning"],
+            "research": ["research", "paper", "study", "analysis", "academic", "journal"],
+            "presentation": ["presentation", "slides", "beamer", "talk", "conference"],
+            "letter": ["letter", "correspondence", "mail", "formal letter"]
+        }
+        
+        # Check for template keywords
+        for template_name, keywords in template_keywords.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                return template_name
+        
+        return None
