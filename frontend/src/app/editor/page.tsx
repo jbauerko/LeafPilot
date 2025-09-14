@@ -11,6 +11,7 @@ import Chat from "@/components/Editor/Chat";
 import Menu from "@/components/Editor/Menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
 
 const Document = dynamic(
   () => import("react-pdf").then((mod) => mod.Document),
@@ -34,6 +35,7 @@ interface EditProps {
 export default function Edit ({}: EditProps) {
   const monaco = useMonaco();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [numPages, setNumPages] = useState<number>(0);
 
   const { content, setContent, compiledPdf } = useEditorStore(
     (state) => state,
@@ -90,13 +92,19 @@ export default function Edit ({}: EditProps) {
 	  <Document
 	    className="w-[40vw]"
 	    file={file}
-	    onLoadSuccess={()=>console.log("Succesfully loaded pdf")}
+	    onLoadSuccess={({ numPages }) => {
+	      console.log("Succesfully loaded pdf", numPages);
+	      setNumPages(numPages);
+	    }}
 	  >
-	    <Page 
-	      className=""
-	      pageNumber={1}
-	      width={typeof window !== "undefined" ? Math.floor(window.innerWidth * 0.4) : undefined}
-	    />
+	    {Array.from({ length: numPages }, (_, i) => (
+	      <Page
+		key={i}
+		className={"mb-2"}
+		pageNumber={i+1}
+		width={typeof window !== "undefined" ? Math.floor(window.innerWidth * 0.4) : undefined}
+	      />
+	    ))}
 	  </Document>
 	</ScrollArea>
 	<Chat

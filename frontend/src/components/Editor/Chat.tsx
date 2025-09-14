@@ -144,7 +144,7 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 			      <Eye />
 			    </Button>
 			  </DialogTrigger>
-			  <Button variant="secondary" className="w-min" onClick={async ()=>{
+			  <Button variant="secondary" className="w-min" disabled={content==message.diff} onClick={async ()=>{
 			    if (message.diff) {
 			      setContent(message.diff)
 			      setIsCompiling(true);
@@ -254,6 +254,7 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 	  className="w-full relative"
 	>
 	  <Textarea
+	    disabled={isWaiting}
 	    placeholder="Type a message..."
 	    value={input}
 	    onKeyPress={(e)=>{

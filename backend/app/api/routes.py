@@ -15,14 +15,14 @@ async def compile_endpoint(file: UploadFile = File(...)):
     return response
 
 @router.post("/chat")
-async def chat_endpoint(prompt: str = Form(...), source: UploadFile | None = File(None), attached: UploadFile | None = File(None)):
-    if not source:
+async def chat_endpoint(prompt: str = Form(...), source: UploadFile | None = None, attached: UploadFile | None = None):
+    if not source and not attached:
         return await ChatService.process_chat(ChatRequest(prompt=prompt))
 
     tex_segments: str = ""
     context_segments: list[str] = []
 
-    for f in [source, attached]:
+    for f in filter(lambda x: x is not None, [source, attached]):
         if not f.filename.endswith((".mp3", ".wav", ".m4a", ".txt", ".tex", ".md")):
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {f.filename}")
     
