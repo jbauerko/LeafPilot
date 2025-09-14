@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
-from app.services.chat_service import ChatService, AudioService
+from app.services.chat_service import ChatService
+from app.services.audio_service import AudioService
 from app.services.pdf_service import PDFService
 from app.services.html_service import HTMLService
 from app.services.manim_service.manim_service import ManimService
@@ -14,20 +15,20 @@ async def compile_endpoint(file: UploadFile = File(...)):
     return response
 
 @router.post("/chat")
-async def chat_endpoint(prompt: str = Form(...), files: list[UploadFile] | None = File(None)):
-    if not files:
+async def chat_endpoint(prompt: str = Form(...), source: UploadFile | None = File(None), attached: UploadFile | None = File(None)):
+    if not source:
         return await ChatService.process_chat(ChatRequest(prompt=prompt))
 
     tex_segments: str = ""
     context_segments: list[str] = []
 
-    for f in files:
+    for f in [source, attached]:
         if not f.filename.endswith((".mp3", ".wav", ".m4a", ".txt", ".tex", ".md")):
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {f.filename}")
     
         if f.filename.lower().endswith((".mp3", ".wav", ".m4a")): 
             try:
-                text: str = AudioService.process_audio(f)
+                text: str = await AudioService.process_audio(f)
                 context_segments.append(f"% ---- CONTEXT {f.filename} ----\n{text}")
             except Exception:
                 raise HTTPException(status_code=500, detail=f"Could not process audio file: {f.filename}") 
@@ -39,7 +40,7 @@ async def chat_endpoint(prompt: str = Form(...), files: list[UploadFile] | None 
                 text = raw.decode("latin-1", errors="ignore")
                 
             if f.filename.lower().endswith(".tex"):
-                tex_segments.append(f"% ---- BEGIN ORIGINAL {f.filename} ----\n{text}\n% ---- END ORIGINAL {f.filename} ----")
+                tex_segments += f"% ---- BEGIN ORIGINAL {f.filename} ----\n{text}\n% ---- END ORIGINAL {f.filename} ----"
             else:
                 context_segments.append(f"% ---- CONTEXT {f.filename} ----\n{text}")
 
