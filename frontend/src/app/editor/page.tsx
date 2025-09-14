@@ -93,7 +93,7 @@ export default function Edit ({}: EditProps) {
 	    onLoadSuccess={()=>console.log("Succesfully loaded pdf")}
 	  >
 	    <Page 
-	      className="w-[40vw]"
+	      className=""
 	      pageNumber={1}
 	      width={typeof window !== "undefined" ? Math.floor(window.innerWidth * 0.4) : undefined}
 	    />
