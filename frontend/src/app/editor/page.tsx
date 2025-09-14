@@ -1,12 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useEditorStore } from "@/providers/editor-store-provider";
 import { Message } from "@/types/types";
-import { Editor, useMonaco } from "@monaco-editor/react";
+import { Editor, DiffEditor, useMonaco } from "@monaco-editor/react";
+import 'react-pdf/dist/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { RAW_LATEX_COMMANDS, toCompletionItem } from "@/constants/latexCommands";
 import Chat from "@/components/Editor/Chat";
 import Menu from "@/components/Editor/Menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import dynamic from "next/dynamic";
+
+const Document = dynamic(
+  () => import("react-pdf").then((mod) => mod.Document),
+  {
+    ssr: false,
+    loading: () => <div className="w-[40vw]">Loading document...</div>,
+  }
+);
+
+const Page = dynamic(
+  () => import("react-pdf").then((mod) => mod.Page),
+  {
+    ssr: false,
+    loading: () => <div className="w-[40vw]">Loading page...</div>,
+  }
+);
 
 interface EditProps {
 };
@@ -15,8 +35,13 @@ export default function Edit ({}: EditProps) {
   const monaco = useMonaco();
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const { setTerm } = useEditorStore(
+  const { content, setContent, compiledPdf } = useEditorStore(
     (state) => state,
+  );
+
+  const file = useMemo(
+    () => (compiledPdf ? { data: compiledPdf } : null),
+    [compiledPdf]
   );
 
   useEffect(() => {
@@ -42,17 +67,12 @@ export default function Edit ({}: EditProps) {
       ]
     });
 
-    monaco?.languages.registerCompletionItemProvider("latex", {
-      triggerCharacters: ["\\"],
-      provideCompletionItems: (model, position) => {
-	const suggestions = RAW_LATEX_COMMANDS.map((cmd) =>
-	  toCompletionItem(cmd, model, position)
-	);
+    (async () => {
+      const { pdfjs } = await import("react-pdf");
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+    })();
 
-	return { suggestions } ;
-      }
-    });
-  }, [monaco]);
+  });
 
   return (
     <div className="flex flex-col">
@@ -63,11 +83,22 @@ export default function Edit ({}: EditProps) {
 	  theme="vs-dark"
 	  defaultLanguage="latex"
 	  className="w-[40vw] h-[calc(100vh-2.25rem)]"
-	  onChange={(value) => setTerm(value ?? "")} //TODO: Make this not 
+	  value={content}
+	  onChange={(value) => setContent(value ?? "")}
 	/>
-	<div className="w-[40vw]">
-	  PDF
-	</div>
+	<ScrollArea className="h-[calc(100vh-2.25rem)] w-[40vw]">
+	  <Document
+	    className="w-[40vw]"
+	    file={file}
+	    onLoadSuccess={()=>console.log("Succesfully loaded pdf")}
+	  >
+	    <Page 
+	      className="w-[40vw]"
+	      pageNumber={1}
+	      width={typeof window !== "undefined" ? Math.floor(window.innerWidth * 0.4) : undefined}
+	    />
+	  </Document>
+	</ScrollArea>
 	<Chat
 	  messages={messages}
 	  addMessage={(message) => {

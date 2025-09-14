@@ -2,22 +2,26 @@ import { createStore } from "zustand/vanilla";
 
 export type EditorState = {
   content: string;
+  compiledPdf: Uint8Array | undefined;
 };
 
 export type EditorActions = {
-  setTerm: (newContent: string) => void
+  setContent: (newContent: string) => void
+  setPdf: (file: Uint8Array | null) => void
 };
 
 export type EditorStore = EditorState & EditorActions;
 
 export const initEditorStore = (): EditorState => {
   return { 
-    content: ""
+    content: "",
+    compiledPdf: undefined,
   }
 }
 
 export const defaultInitState: EditorState = {
-  content: ""
+  content: "",
+  compiledPdf: undefined,
 };
 
 
@@ -26,8 +30,14 @@ export const createEditorStore = (
 ) => {
   return createStore<EditorStore>()((set) => ({
     ...initState,
-    setTerm: (newContent: string) => {
+    setContent: (newContent: string) => {
       set(_ => ({ content: newContent }));
     },
+    setPdf: (file: Uint8Array | null) => {
+      console.log(typeof file);
+      if (file) {
+	set(_ => ({ compiledPdf: file }));
+      }
+    }
   }))
 };

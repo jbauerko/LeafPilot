@@ -1,10 +1,6 @@
 
-export const strToTex = (fileContent: string) => {
-  const formData = new FormData();
-
+export const strToTex = (fileContent: string): File => {
   const texFile = new File([fileContent], "main.tex", { type: "text/x-tex" });
-
-  formData.append("file", texFile);
-
-  return formData;
+  
+  return texFile;
 };

@@ -1,33 +1,33 @@
 import baseAPIClient from "@/APIClients/BaseAPIClient";
 import { isSuccess } from "../utils/apiUtils";
+import { ChatDTO } from "@/types/types";
 
 const base = await baseAPIClient();
 
-const compileTex = async (formData: FormData): Promise<Uint8Array | null> => {
+const sendMessage = async (message: string, file: File): Promise<ChatDTO | null> => {
   try {
+    const formData = new FormData();
+
+    formData.append("prompt", message);
+    formData.append("file", file);
+
     const res = await base.post(
-      `/compile`, formData, {
+      `/chat`, formData, {
 	headers: {
 	  "Content-Type": "multipart/form-data"
-	},
-	responseType: "blob"
-      }
-    );
+	}
+    });
 
-    if (!isSuccess(res)) {
+    if (!isSuccess(res) || res.data.error) {
       throw new Error(`Response status ${res.status}`);
     }
 
-    const arrayBuffer = await res.data.arrayBuffer();
-
-    const pdfBytes = new Uint8Array(arrayBuffer);
-
-    return pdfBytes;
+    return res.data as ChatDTO;
   } catch (error) {
     console.log("Error:", error);
     return null;
   }
 }
 export default {
-  compileTex
+  sendMessage
 }

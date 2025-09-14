@@ -1,7 +1,7 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional
 
-# Requests
+# REQUEST MODELS
 
 class CompileRequest(BaseModel):
     """Model for compiling Latex into a pdf"""
@@ -9,19 +9,12 @@ class CompileRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     """Model for a natural language prompt request"""
-    input: str
-    options: Optional[dict]
+    prompt: str
 
-# Responses
-
-class LatexResponse(BaseModel):
-    """Model for Latex to be returned to the user"""
-    latex: str  
-    preamble: Optional[str] = None  
-    packages: Optional[List[str]] = None
-    error: Optional[str] = None  
+# RESPONSE MODELS
 
 class ChatResponse(BaseModel):
-    """Model for response to a prompt. Includes updated Latex in a Latex response"""
-    response: str
-    latex: LatexResponse
+    """Simple chat result containing a response message and the produced LaTeX."""
+    message: str
+    latex: str
+    error: Optional[str] = None
