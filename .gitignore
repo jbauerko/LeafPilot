@@ -46,3 +46,5 @@ __pycache__/
 *.pyd
 .Python
 **/__pycache__/
+
+/backend/tests/
