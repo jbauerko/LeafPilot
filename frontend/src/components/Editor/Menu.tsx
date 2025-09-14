@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Menubar, MenubarGroup, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem } from "@/components/ui/menubar";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,7 @@ interface MenuProps {
 };
 
 export default function Menu ({}: MenuProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { content, setPdf } = useEditorStore(
+  const { content, setPdf, isCompiling, setIsCompiling } = useEditorStore(
     (state) => state
   );
 
@@ -38,16 +35,16 @@ export default function Menu ({}: MenuProps) {
 	</MenubarContent>
       </MenubarMenu>
       <Button
-	disabled={isLoading}
+	disabled={isCompiling}
 	onClick={async ()=>{
 	  //console.log("Testing")
-	  setIsLoading(true);
+	  setIsCompiling(true);
 	  const file = await CompileAPIClient.compileTex(strToTex(content));
 	  setPdf(file);
-	  setIsLoading(false);
+	  setIsCompiling(false);
 	}}>
 	  Compile
-	{isLoading
+	{isCompiling
 	  ? <LoaderCircle className="animate-spin" />
 	  : <ArrowRight />}
       </Button>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, LoaderCircle, ChevronDown, Square, Eye, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ChatAPIClient from "@/APIClients/ChatAPIClient";
+import CompileAPIClient from "@/APIClients/CompileAPIClient";
 import { strToTex } from "@/utils/helpers";
 import { useEditorStore } from "@/providers/editor-store-provider";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from "@/components/ui/dialog";
@@ -28,7 +29,7 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
   const isWaiting = messages?.at(-1)?.role=="user";
   const messagesRef = useRef<HTMLDivElement>(null);
 
-  const { content, setContent } = useEditorStore(
+  const { content, setContent, setIsCompiling, setPdf } = useEditorStore(
     (state) => state
   );
 
@@ -117,9 +118,13 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 			      <Eye />
 			    </Button>
 			  </DialogTrigger>
-			  <Button variant="secondary" className="w-min" onClick={()=>{
+			  <Button variant="secondary" className="w-min" onClick={async ()=>{
 			    if (message.diff) {
 			      setContent(message.diff)
+			      setIsCompiling(true);
+			      const file = await CompileAPIClient.compileTex(strToTex(message.diff));
+			      setPdf(file);
+			      setIsCompiling(false);
 			    }
 			  }}>
 			    <Check />
@@ -143,11 +148,15 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 			    <DialogClose asChild>
 			      <Button 
 				disabled={isLoading || (message.diff == content)}
-				onClick={()=>{
+				onClick={async () =>{
 				  if (message.diff) {
 				    setIsLoading(true);
 				    setContent(message.diff);
+				    setIsCompiling(true);
+				    const file = await CompileAPIClient.compileTex(strToTex(message.diff));
+				    setPdf(file);
 				    setIsLoading(false);
+				    setIsCompiling(false);
 				}}}>
 				{isLoading 
 				  ? <LoaderCircle className="animate-spin"/>
