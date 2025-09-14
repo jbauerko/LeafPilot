@@ -29,8 +29,13 @@ class AgentComposer:
     async def compose_document(self, prompt: str) -> ChatResponse:
         logger.info(f"Starting document composition for prompt: {prompt[:100]}...")
         
-        animations = await self._extract_animation_specs(prompt)
-        logger.info(f"Extracted {len(animations)} animation(s) from prompt")
+        # Only extract animations if the prompt contains "video"
+        animations = []
+        if "video" in prompt.lower():
+            animations = await self._extract_animation_specs(prompt)
+            logger.info(f"Extracted {len(animations)} animation(s) from prompt (video keyword detected)")
+        else:
+            logger.info("No 'video' keyword detected in prompt - skipping animation generation")
         
         manim_tool = self.registry.get("generate_manim_animation")
         screenshot_tool = self.registry.get("generate_video_screenshot")
