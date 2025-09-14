@@ -24,10 +24,11 @@ interface ChatProps {
 
 export default function Chat ({ messages, addMessage }: ChatProps) {
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const isWaiting = messages?.at(-1)?.role=="user";
   const messagesRef = useRef<HTMLDivElement>(null);
 
-  const { content } = useEditorStore(
+  const { content, setContent } = useEditorStore(
     (state) => state
   );
 
@@ -55,7 +56,7 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
     setInput("");
     const data = await ChatAPIClient.sendMessage(input, strToTex(content));
     if (data) {
-      addMessage({content: data.message, role: "bot"});
+      addMessage({content: data.message, role: "bot", diff: data.latex});
     }
   };
 
@@ -108,25 +109,42 @@ export default function Chat ({ messages, addMessage }: ChatProps) {
 		    ref={(i==messages.length-1) ? messagesRef : undefined}
 		  >
 		    {message.content}
-		    {message.role=="bot" && (
+		    {message.role=="bot" && message.diff && (
 		      <Dialog>
 			<DialogTrigger asChild>
 			  <Button variant="secondary" className="w-min">
 			    See Diffview
 			  </Button>
 			</DialogTrigger>
-			<DialogContent className="w-[-webkit-fill-available] max-w-[100vw] h-[100vh]">
+			<DialogContent className="w-[80vw] max-w-none">
 			  <DialogHeader>
 			    <DialogTitle>Diff View</DialogTitle>
 			    <DialogDescription>See the suggested changes made by AI</DialogDescription>
 			  </DialogHeader>
-			  <DiffEditor
-			    theme="vs-dark"
-			    original={content}
-			    modified={content+'.'}
-			  />
-			  <DialogFooter>
+			  <div className="flex self-center items-center justify-center w-full flex-row min-h-0 w-[70vw] h-[80vh]">
+			    <DiffEditor
+			      //width="40vw"
+			      theme="vs-dark"
+			      original={content}
+			      modified={message.diff}
+			    />
+			  </div>
+			  <DialogFooter className="flex flex-row justify-between shrink-0 h-min">
 			    <DialogClose>Close</DialogClose>
+			    <DialogClose asChild>
+			      <Button 
+				disabled={isLoading || (message.diff == content)}
+				onClick={()=>{
+				  if (message.diff) {
+				    setIsLoading(true);
+				    setContent(message.diff);
+				    setIsLoading(false);
+				}}}>
+				{isLoading 
+				  ? <LoaderCircle className="animate-spin"/>
+				  : <p>Accept</p>}
+			      </Button>
+			    </DialogClose>
 			  </DialogFooter>
 			</DialogContent>
 		      </Dialog>

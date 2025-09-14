@@ -6,7 +6,7 @@ export type EditorState = {
 };
 
 export type EditorActions = {
-  setTerm: (newContent: string) => void
+  setContent: (newContent: string) => void
   setPdf: (file: Uint8Array | null) => void
 };
 
@@ -30,7 +30,7 @@ export const createEditorStore = (
 ) => {
   return createStore<EditorStore>()((set) => ({
     ...initState,
-    setTerm: (newContent: string) => {
+    setContent: (newContent: string) => {
       set(_ => ({ content: newContent }));
     },
     setPdf: (file: Uint8Array | null) => {

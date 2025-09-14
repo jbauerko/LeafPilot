@@ -35,7 +35,7 @@ export default function Edit ({}: EditProps) {
   const monaco = useMonaco();
   const [messages, setMessages] = useState<Message[]>([]);
 
-  const { content, setTerm, compiledPdf } = useEditorStore(
+  const { content, setContent, compiledPdf } = useEditorStore(
     (state) => state,
   );
 
@@ -83,7 +83,8 @@ export default function Edit ({}: EditProps) {
 	  theme="vs-dark"
 	  defaultLanguage="latex"
 	  className="w-[40vw] h-[calc(100vh-2.25rem)]"
-	  onChange={(value) => setTerm(value ?? "")}
+	  value={content}
+	  onChange={(value) => setContent(value ?? "")}
 	/>
 	<ScrollArea className="h-[calc(100vh-2.25rem)] w-[40vw]">
 	  <Document
