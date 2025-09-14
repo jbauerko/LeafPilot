@@ -105,6 +105,20 @@ class ManimService:
             "   self.play(Create(graph), run_time=2)\n"
             "   self.wait(0.1)\n"
             "self.wait(2)\n"
+            "### EXAMPLE 3 - CORRECT RIEMANN RECTANGLES\n"
+            "axes = Axes(x_range=[0, 4, 1], y_range=[0, 10, 2])\n"
+            "graph = axes.plot(lambda x: x**2, color=RED)\n"
+            "rects = axes.get_riemann_rectangles(\n"
+            "    graph,\n"
+            "    x_range=[0, 3],\n"
+            "    dx=0.5,\n"
+            "    input_sample_type='left',\n"
+            "    fill_opacity=0.5,\n"
+            "    fill_color=YELLOW,\n"
+            "    stroke_width=0\n"
+            ")\n"
+            "self.play(Create(axes), Create(graph), Create(rects))\n"
+            "self.wait(2)\n"
         )
         
         # Add error context if this is a retry
@@ -114,21 +128,39 @@ class ManimService:
 The previous attempt failed with this error:
 {error_context}
 
-Please fix the code based on this error. Common fixes:
-- Ensure all variables are defined before use (e.g., 'axes = Axes(...)' before using 'axes')
-- Check function names and parameters
-- Verify mathematical expressions are valid
-- Make sure all imports are available (numpy as np, etc.)
-- Avoid complex logic that might cause runtime errors
+CRITICAL: You MUST fix this specific error in your code. Common parameter fixes:
+- For 'fill_color' errors: Use 'fill_opacity' instead of 'fill_color' for rectangle fills
+- For 'colors' errors: Use 'fill_opacity' and 'fill_color' separately, not 'colors' parameter
+- For 'unexpected keyword argument' errors: Remove the problematic parameter or use the correct parameter name
+- For 'fill_opacity' errors: Ensure you're using the correct parameter name for the method
+- For get_riemann_rectangles(): Use 'fill_opacity' and 'fill_color' instead of 'colors' or 'fill_color'
+
+Previous failed code patterns to AVOID:
+- get_riemann_rectangles(..., colors=[YELLOW]) ❌
+- get_riemann_rectangles(..., fill_color=YELLOW) ❌
+
+Correct pattern:
+- get_riemann_rectangles(..., fill_opacity=0.5, fill_color=YELLOW) ✅
+
+Please generate code that specifically addresses this error. Do not repeat the same mistake.
 """
             system_instructions = base_instructions + error_instructions
         else:
             system_instructions = base_instructions
 
-        user_message = f"Please create a manim animation for this description: {description}"
+        if error_context:
+            user_message = f"""Please create a manim animation for this description: {description}
+
+IMPORTANT: The previous attempt failed with this error: {error_context}
+You MUST fix this specific error. Do not use the same parameters that caused this failure."""
+        else:
+            user_message = f"Please create a manim animation for this description: {description}"
         
         print("Making API call to Groq...")
         print(f"User message: {user_message}")
+        if error_context:
+            print(f"ERROR CONTEXT PASSED: {error_context}")
+            print(f"RETRY COUNT: {retry_count}")
         
         try:
             response = client.chat.completions.create(

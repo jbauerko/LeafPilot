@@ -1,0 +1,201 @@
+
+\documentclass[11pt]{book}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{tocloft}
+
+% Theorem environments
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}{Lemma}[chapter]
+\newtheorem{corollary}{Corollary}[chapter]
+\newtheorem{example}{Example}[chapter]
+\newtheorem{remark}{Remark}[chapter]
+
+% Header and footer setup
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[LO,RE]{\leftmark}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Title page information
+\title{\textbf{MATHEMATICS TEXTBOOK TEMPLATE}}
+\author{Author Name}
+\date{\today}
+
+\begin{document}
+
+% Title page
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Huge\bfseries MATHEMATICS TEXTBOOK TEMPLATE\par}
+\vspace{1cm}
+{\Large A Comprehensive Guide to Mathematical Concepts\par}
+\vspace{2cm}
+
+{\large Author Name\par}
+\vspace{1cm}
+
+{\large Department of Mathematics\par}
+University Name\par
+\vspace{1cm}
+
+{\large \today\par}
+
+\vfill
+
+\end{titlepage}
+
+% Copyright page
+\newpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+Copyright \copyright\ 2024 Author Name\\
+All rights reserved.
+\end{center}
+\vspace*{\fill}
+
+% Table of contents
+\tableofcontents
+\newpage
+
+% Preface
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+
+This textbook provides a comprehensive introduction to mathematical concepts. The material is organized to build understanding progressively, with each chapter building upon previous knowledge.
+
+\textbf{Prerequisites:} Basic algebra and geometry.
+
+\textbf{How to use this book:} Each chapter contains definitions, theorems, examples, and exercises. Work through the examples carefully and attempt all exercises to reinforce your understanding.
+
+% Part I
+\part{Part I Title}
+
+\chapter{Chapter 1 Title}
+\section{Section 1.1 Title}
+\begin{definition}
+This is a placeholder definition. Replace with your actual definition.
+\end{definition}
+
+\begin{example}
+This is a placeholder example. Replace with your actual example.
+\end{example}
+
+\section{Section 1.2 Title}
+\begin{definition}
+This is another placeholder definition. Replace with your actual definition.
+\end{definition}
+
+\begin{theorem}[Theorem Name]
+This is a placeholder theorem. Replace with your actual theorem statement.
+\end{theorem}
+
+\begin{proof}
+This is a placeholder proof. Replace with your actual proof.
+\end{proof}
+
+\section{Exercises}
+\begin{enumerate}
+\item This is a placeholder exercise. Replace with your actual exercise.
+\item This is another placeholder exercise. Replace with your actual exercise.
+\item This is a third placeholder exercise. Replace with your actual exercise.
+\end{enumerate}
+
+\chapter{Chapter 2 Title}
+\section{Section 2.1 Title}
+\begin{definition}
+This is a placeholder definition. Replace with your actual definition.
+\end{definition}
+
+\begin{lemma}[Lemma Name]
+This is a placeholder lemma. Replace with your actual lemma statement.
+\end{lemma}
+
+\section{Section 2.2 Title}
+\begin{corollary}[Corollary Name]
+This is a placeholder corollary. Replace with your actual corollary statement.
+\end{corollary}
+
+\section{Exercises}
+\begin{enumerate}
+\item This is a placeholder exercise. Replace with your actual exercise.
+\item This is another placeholder exercise. Replace with your actual exercise.
+\item This is a third placeholder exercise. Replace with your actual exercise.
+\end{enumerate}
+
+% Part II
+\part{Part II Title}
+
+\chapter{Chapter 3 Title}
+\section{Section 3.1 Title}
+\begin{definition}
+This is a placeholder definition. Replace with your actual definition.
+\end{definition}
+
+\begin{theorem}[Theorem Name]
+This is a placeholder theorem. Replace with your actual theorem statement.
+\end{theorem}
+
+\section{Section 3.2 Title}
+\begin{remark}
+This is a placeholder remark. Replace with your actual remark.
+\end{remark}
+
+\section{Exercises}
+\begin{enumerate}
+\item This is a placeholder exercise. Replace with your actual exercise.
+\item This is another placeholder exercise. Replace with your actual exercise.
+\item This is a third placeholder exercise. Replace with your actual exercise.
+\end{enumerate}
+
+% Part III
+\part{Part III Title}
+
+\chapter{Chapter 4 Title}
+\section{Section 4.1 Title}
+\begin{definition}
+This is a placeholder definition. Replace with your actual definition.
+\end{definition}
+
+\begin{theorem}
+This is a placeholder theorem. Replace with your actual theorem statement.
+\end{theorem}
+
+\section{Section 4.2 Title}
+\begin{example}
+This is a placeholder example. Replace with your actual example.
+\end{example}
+
+\section{Exercises}
+\begin{enumerate}
+\item This is a placeholder exercise. Replace with your actual exercise.
+\item This is another placeholder exercise. Replace with your actual exercise.
+\item This is a third placeholder exercise. Replace with your actual exercise.
+\end{enumerate}
+
+% Bibliography
+\chapter*{Bibliography}
+\addcontentsline{toc}{chapter}{Bibliography}
+
+\begin{thebibliography}{9}
+\bibitem{stewart}
+Stewart, James. \emph{Calculus: Early Transcendentals}. 8th ed. Cengage Learning, 2016.
+
+\bibitem{spivak}
+Spivak, Michael. \emph{Calculus}. 4th ed. Publish or Perish, 2008.
+
+\bibitem{rudin}
+Rudin, Walter. \emph{Principles of Mathematical Analysis}. 3rd ed. McGraw-Hill, 1976.
+\end{thebibliography}
+
+\end{document}

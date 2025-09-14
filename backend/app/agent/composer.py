@@ -1,11 +1,15 @@
 import json
 import uuid
+import logging
 from typing import List, Dict
 from groq import Groq
 
 from app.core.config import settings
 from app.models.schemas import ChatResponse
 from .registry import ToolRegistry
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class AgentComposer:
@@ -23,9 +27,18 @@ class AgentComposer:
         self.client = Groq(api_key=settings.groq_api_key)
 
     async def compose_document(self, prompt: str) -> ChatResponse:
+        logger.info(f"Starting document composition for prompt: {prompt[:100]}...")
+        
         animations = await self._extract_animation_specs(prompt)
+        logger.info(f"Extracted {len(animations)} animation(s) from prompt")
+        
         manim_tool = self.registry.get("generate_manim_animation")
+        screenshot_tool = self.registry.get("generate_video_screenshot")
         latex_tool = self.registry.get("generate_latex")
+        template_tool = self.registry.get("get_latex_template")
+        web_scraper_tool = self.registry.get("scrape_web_page")
+        
+        logger.info(f"Tools available - Manim: {manim_tool is not None}, Screenshot: {screenshot_tool is not None}, LaTeX: {latex_tool is not None}, Template: {template_tool is not None}, WebScraper: {web_scraper_tool is not None}")
 
         generated_anim_results: List[Dict] = []
         if animations:
@@ -49,19 +62,84 @@ class AgentComposer:
                 video_path = r.get("video_path")
                 desc = r.get("description")
                 context_lines.append(f"% Animation {i}: {desc}")
-                if video_path:
-                    # Use run: reference; actual embedding left to LaTeX engine/user packages
+                if video_path and screenshot_tool:
+                    # Generate screenshot from video
+                    logger.info(f"Generating screenshot for video {i}: {video_path}")
+                    screenshot_result = await screenshot_tool.run({"video_path": video_path})
+                    
+                    if screenshot_result.get("success"):
+                        screenshot_path = screenshot_result.get("screenshot_path")
+                        video_url = screenshot_result.get("video_url")
+                        logger.info(f"Screenshot generated successfully for animation {i}: {screenshot_path}")
+                        logger.info(f"Video URL: {video_url}")
+                        logger.info(f"COMPOSER: Using screenshot path in LaTeX: {screenshot_path}")
+                        
+                        context_lines.append(f"% Screenshot: {screenshot_path}")
+                        context_lines.append(f"% Video URL: {video_url}")
+                        # Embed screenshot with link to video
+                        context_lines.append(f"\\begin{{figure}}[h]")
+                        context_lines.append(f"\\centering")
+                        context_lines.append(f"\\href{{{video_url}}}{{\\includegraphics[width=0.8\\textwidth]{{{screenshot_path}}}}}")
+                        context_lines.append(f"\\caption{{Animation {i}: {desc}}}")
+                        context_lines.append(f"\\end{{figure}}")
+                        context_lines.append("")  # Empty line for spacing
+                    else:
+                        # Fallback to simple video link if screenshot fails
+                        error_msg = screenshot_result.get('error', 'Unknown error')
+                        logger.warning(f"Screenshot generation failed for animation {i}: {error_msg}")
+                        context_lines.append(f"% Screenshot generation failed: {error_msg}")
+                        # Generate localhost URL for fallback
+                        import os
+                        video_filename = os.path.basename(video_path)
+                        if "1080p60" in video_path:
+                            fallback_url = f"http://localhost:8000/videos60/{video_filename}"
+                        else:
+                            fallback_url = f"http://localhost:8000/videos/{video_filename}"
+                        context_lines.append(f"\\noindent Animation {i}: \\href{{{fallback_url}}}{{Open Video}}\\par")
+                elif video_path:
+                    # Fallback if screenshot tool not available
                     context_lines.append(f"% Local file: {video_path}")
-                    context_lines.append(
-                        f"\\noindent Animation {i}: \\href{{run:{video_path}}}{{Open Video}}\\par"  # requires hyperref
-                    )
+                    # Generate localhost URL for fallback
+                    import os
+                    video_filename = os.path.basename(video_path)
+                    if "1080p60" in video_path:
+                        fallback_url = f"http://localhost:8000/videos60/{video_filename}"
+                    else:
+                        fallback_url = f"http://localhost:8000/videos/{video_filename}"
+                    context_lines.append(f"\\noindent Animation {i}: \\href{{{fallback_url}}}{{Open Video}}\\par")
             context_lines.append("% ==== END GENERATED ANIMATIONS ====")
+
+        # Check for URLs in the prompt and scrape them
+        web_content = await self._scrape_urls_from_prompt(prompt, web_scraper_tool)
+        if web_content:
+            context_lines.extend(web_content)
 
         augmented_prompt = prompt
         if context_lines:
-            augmented_prompt += ("\n\n" + "\n".join(context_lines) +
-                                 "\n\nPlease integrate the animations into an 'Animations' section. "
-                                 "If a full document is not present, create one. Include a section heading 'Animations'.")
+            augmented_prompt += ("\n\n" + "\n".join(context_lines))
+            
+            # Add instructions based on what content was generated
+            instructions = []
+            if any("GENERATED ANIMATIONS" in line for line in context_lines):
+                instructions.append("Please integrate the animations into an 'Animations' section.")
+            if any("WEB CONTENT" in line for line in context_lines):
+                instructions.append("Please integrate the web content into appropriate sections.")
+            if instructions:
+                augmented_prompt += ("\n\n" + " ".join(instructions) + 
+                                   " If a full document is not present, create one.")
+
+        # Try to get a relevant template if available
+        if template_tool:
+            template_type = self._detect_template_type(prompt)
+            if template_type:
+                logger.info(f"Detected template type: {template_type}, retrieving template...")
+                template_result = await template_tool.run({"type": template_type})
+                if template_result.get("success"):
+                    template_content = template_result.get("template_content", "")
+                    augmented_prompt += f"\n\n% ==== TEMPLATE EXAMPLE: {template_type.upper()} ====\n% Use this as reference for structure and formatting:\n{template_content}"
+                    logger.info(f"Retrieved template '{template_type}' ({len(template_content)} characters)")
+                else:
+                    logger.warning(f"Failed to retrieve template '{template_type}': {template_result.get('error')}")
 
         # Generate final LaTeX
         if latex_tool:
@@ -88,6 +166,8 @@ class AgentComposer:
         """
         system = (
             "You extract manim animation intents from a user request aimed at creating a LaTeX document with optional animations. "
+            "IMPORTANT: Generate at most 1 animation per request to avoid duplication. "
+            "If multiple animation concepts are mentioned, choose the most important or comprehensive one. "
             "Return ONLY JSON with key 'animations' mapping to a list of objects each having a 'description' string. "
             "If no animations are implied, return {\"animations\": []}. No extra text."
         )
@@ -121,3 +201,70 @@ class AgentComposer:
             if desc and isinstance(desc, str) and 5 <= len(desc) <= 500:
                 cleaned.append({"description": desc.strip()})
         return cleaned
+
+    def _detect_template_type(self, prompt: str) -> str | None:
+        """Detect if the prompt suggests a specific document type that has a template."""
+        prompt_lower = prompt.lower()
+        
+        # Skip template detection if "generic" keyword is present
+        if "generic" in prompt_lower:
+            return None
+        
+        # Template detection keywords
+        template_keywords = {
+            "swe_resume": ["resume", "cv", "curriculum vitae", "job application", "employment", "software", "swe"],
+            "two_row_resume": ["two row resume", "two-column resume", "side by side resume"],
+            "textbook": ["textbook", "book", "course", "lesson", "educational", "learning"],
+            "research": ["research", "paper", "study", "analysis", "academic", "journal"],
+            "presentation": ["presentation", "slides", "beamer", "talk", "conference"],
+            "letter": ["letter", "correspondence", "mail", "formal letter"]
+        }
+        
+        # Check for template keywords
+        for template_name, keywords in template_keywords.items():
+            if any(keyword in prompt_lower for keyword in keywords):
+                return template_name
+        
+        return None
+
+    async def _scrape_urls_from_prompt(self, prompt: str, web_scraper_tool) -> List[str]:
+        """Detect URLs in the prompt and scrape them for content."""
+        if not web_scraper_tool:
+            return []
+        
+        # Simple URL detection regex
+        import re
+        url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+        urls = re.findall(url_pattern, prompt)
+        
+        if not urls:
+            return []
+        
+        web_content_lines = []
+        web_content_lines.append("% ==== WEB CONTENT (Scraped) ====")
+        
+        for i, url in enumerate(urls, start=1):
+            logger.info(f"WEB_SCRAPER: Detected URL {i}: {url}")
+            try:
+                scrape_result = await web_scraper_tool.run({"url": url})
+                if scrape_result.get("success"):
+                    summary = scrape_result.get("summary", "")
+                    web_content_lines.append(f"% URL {i}: {url}")
+                    web_content_lines.append(f"% Summary: {summary[:200]}{'...' if len(summary) > 200 else ''}")
+                    web_content_lines.append(f"\\section{{Web Content {i}}}")
+                    web_content_lines.append(f"\\label{{url{i}}}")
+                    web_content_lines.append(f"Source: \\href{{{url}}}{{{url}}}")
+                    web_content_lines.append("")
+                    web_content_lines.append(f"{summary}")
+                    web_content_lines.append("")
+                    logger.info(f"WEB_SCRAPER: Successfully scraped URL {i} ({len(summary)} characters)")
+                else:
+                    error_msg = scrape_result.get('error', 'Unknown error')
+                    logger.warning(f"WEB_SCRAPER: Failed to scrape URL {i}: {error_msg}")
+                    web_content_lines.append(f"% URL {i}: {url} (scraping failed: {error_msg})")
+            except Exception as e:
+                logger.error(f"WEB_SCRAPER: Exception scraping URL {i} ({url}): {e}")
+                web_content_lines.append(f"% URL {i}: {url} (exception: {str(e)})")
+        
+        web_content_lines.append("% ==== END WEB CONTENT ====")
+        return web_content_lines
