@@ -1,6 +1,10 @@
 # <img width="24" height="24" alt="leaf (1)" src="https://github.com/user-attachments/assets/4e96f8e3-6cc2-4683-863d-a6b400446134" /> LeafPilot
 The AI LaTeX Editor. Become an extraordinary researcher. student. professor.
 
+
+https://github.com/user-attachments/assets/535ca78c-214c-4180-bfef-ec9315d5d4f2
+
+
 ## Architechture
 **Frontend**: Next.js, TypeScript, Zustand
 
