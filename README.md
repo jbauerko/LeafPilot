@@ -5,7 +5,7 @@ The AI LaTeX Editor. Become an extraordinary researcher. student. professor.
 https://github.com/user-attachments/assets/535ca78c-214c-4180-bfef-ec9315d5d4f2
 
 
-## Architechture
+## Architecture
 **Frontend**: Next.js, TypeScript, Zustand
 
 **Backend**: Python, FastAPI, Groq, Pydantic
